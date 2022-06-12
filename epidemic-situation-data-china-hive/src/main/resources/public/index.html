@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>map</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <script src="/echarts.js"></script>
+    <script src="/china.js"></script>
+    <script src="/jquery.js"></script>
+    <style>
+        *{margin:0;padding:0;font-size:25px}
+        html,body{
+            width:100%;
+            height:100%;
+        }
+        #main{
+            width:1000px;
+            height:750px;
+            margin: 50px auto;
+            /*border:1px solid #ddd;*/
+        }
+        /*默认长宽比0.75*/
+    </style>
+</head>
+<body>
+<div style="text-align: center">
+    <input type="date" id="epidemicDate">
+</div>
+<div id="main"></div>
+<script type="text/javascript">
+    // 获取时间框
+    var epidemicDate = document.getElementById("epidemicDate");
+    // 把当前时间填入时间框
+    epidemicDate.valueAsDate = new Date();
+
+    var dataList=[
+        {name:"南海诸岛",value:0},
+        {name: '北京', value: 0},
+        {name: '天津', value: 0},
+        {name: '上海', value: 0},
+        {name: '重庆', value: 0},
+        {name: '河北', value: 0},
+        {name: '河南', value: 0},
+        {name: '云南', value: 0},
+        {name: '辽宁', value: 0},
+        {name: '黑龙江', value: 0},
+        {name: '湖南', value: 0},
+        {name: '安徽', value: 0},
+        {name: '山东', value: 0},
+        {name: '新疆', value: 0},
+        {name: '江苏', value: 0},
+        {name: '浙江', value: 0},
+        {name: '江西', value: 0},
+        {name: '湖北', value: 0},
+        {name: '广西', value: 0},
+        {name: '甘肃', value: 0},
+        {name: '山西', value: 0},
+        {name: '内蒙古', value: 0},
+        {name: '陕西', value: 0},
+        {name: '吉林', value: 0},
+        {name: '福建', value: 0},
+        {name: '贵州', value: 0},
+        {name: '广东', value: 0},
+        {name: '青海', value: 0},
+        {name: '西藏', value: 0},
+        {name: '四川', value: 0},
+        {name: '宁夏', value: 0},
+        {name: '海南', value: 0},
+        {name: '台湾', value: 0},
+        {name: '香港', value: 0},
+        {name: '澳门', value: 0}
+    ]
+    var myChart = echarts.init(document.getElementById('main'));
+
+    option = {
+        tooltip: {
+            formatter:function(params,ticket, callback){
+                return params.seriesName+'<br />'+params.name+'：'+params.value
+            }//数据格式化
+        },
+        visualMap: {
+            min: 0,
+            max: 1500,
+            left: 'left',
+            top: 'bottom',
+            text: ['高','低'],//取值范围的文字
+            inRange: {
+                color: ['#ffffff', '#ff0000']//取值范围的颜色
+            },
+            show:true//图注
+        },
+        geo: {
+            map: 'china',
+            roam: false,//不开启缩放和平移
+            zoom:1.23,//视角缩放比例
+            label: {
+                normal: {
+                    show: true,
+                    fontSize:'10',
+                    color: 'rgba(0,0,0,0.7)'
+                }
+            },
+            itemStyle: {
+                normal:{
+                    borderColor: 'rgba(0, 0, 0, 0.2)'
+                },
+                emphasis:{
+                    areaColor: '#F3B329',//鼠标选择区域颜色
+                    shadowOffsetX: 0,
+                    shadowOffsetY: 0,
+                    shadowBlur: 20,
+                    borderWidth: 0,
+                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                }
+            }
+        },
+        series : [
+            {
+                name: '信息量',
+                type: 'map',
+                geoIndex: 0,
+                data:dataList
+            }
+        ]
+    };
+
+    // 页面打开以后请求数据
+    myEvent();
+
+    // 为 时间框绑定 事件
+    $("#epidemicDate").blur(function () {
+        // 失去焦点后请求数据
+        myEvent();
+    });
+
+    // 写一个函数 , 封装一个请求
+    function myEvent(){
+        // 获取当前时间
+        var selectedDate = epidemicDate.value;
+        // alert(selectedDate);
+
+        // 向后台发送请求获取疫情数据 ajax 异步请求 , 局部更新
+        $.ajax({
+            type: "GET",
+            url:"/mapData",
+            data:{queryDate:selectedDate},
+            success : function (data) {
+                // data 用于接收前台的响应结果 data -> resultMap cname diagnose
+                // map.get(key)
+                if (data.cname != null){
+                    var epidemicData = [{}];
+                    // 遍历data
+                    for (let i = 0; i < data.cname.length; i++) {
+                        epidemicData[i] = {name: data.cname[i],value:data.diagnose[i]};
+                    }
+                    // 将dataList指向epidemicData
+                    dataList = epidemicData;
+                }else {
+                    alert("Sorry , 查询的数据未找到!!!");
+                }
+                // 将数据应用
+                option.series[0].data = dataList;
+                // 设置加载 option
+                myChart.setOption(option);
+            }
+        });
+    }
+
+    // 点击事件
+    myChart.on('click', function (params) {
+        alert(params.name+" : "+params.value);
+    });
+
+</script>
+</body>
+</html>
